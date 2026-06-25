@@ -1,5 +1,75 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+
+const MARKETS = [
+  { key: 'us', flag: '🇺🇸', label: 'United States', lang: 'en' },
+  { key: 'sv', flag: '🇸🇻', label: 'El Salvador', lang: 'es' },
+  { key: 'ke', flag: '🇰🇪', label: 'Kenya', lang: 'en', soon: true },
+  { key: 'tz', flag: '🇹🇿', label: 'Tanzania', lang: 'en', soon: true },
+];
+
+function RegionPicker() {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(MARKETS[0]);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  function pick(m) {
+    if (m.soon) return;
+    setActive(m);
+    setOpen(false);
+    window.open(`https://app.ementor.ai?market=${m.key}&lang=${m.lang}`, '_blank');
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+        background: 'transparent', border: '1px solid #e2ddd6',
+        fontSize: 13, fontWeight: 500, color: '#3d3d3d',
+        transition: 'all 0.15s',
+      }}>
+        <span>{active.flag}</span>
+        <span>{active.label}</span>
+        <span style={{ fontSize: 10, color: '#6b6b6b' }}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+          background: '#fff', border: '1px solid #e2ddd6', borderRadius: 10,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.1)', minWidth: 180, zIndex: 200,
+          overflow: 'hidden',
+        }}>
+          {MARKETS.map(m => (
+            <button key={m.key} onClick={() => pick(m)} style={{
+              width: '100%', textAlign: 'left',
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px', border: 'none', cursor: m.soon ? 'default' : 'pointer',
+              background: active.key === m.key ? '#e8f5ef' : '#fff',
+              fontSize: 13, fontWeight: 500,
+              color: m.soon ? '#b0b0b0' : '#1a1a1a',
+              transition: 'background 0.1s',
+            }}
+              onMouseEnter={e => { if (!m.soon) e.currentTarget.style.background = '#f7f5f0'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = active.key === m.key ? '#e8f5ef' : '#fff'; }}
+            >
+              <span style={{ fontSize: 18 }}>{m.flag}</span>
+              <span style={{ flex: 1 }}>{m.label}</span>
+              {m.soon && <span style={{ fontSize: 10, color: '#b0b0b0', fontWeight: 600 }}>Soon</span>}
+              {active.key === m.key && !m.soon && <span style={{ fontSize: 11, color: '#1a8a5a' }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -46,7 +116,8 @@ export default function Nav() {
               transition: 'all 0.15s',
             }}>{l.label}</Link>
           ))}
-          <a href="https://app.ementor.ai" className="btn-primary" style={{ marginLeft: 8, padding: '9px 20px', fontSize: 14 }}>
+          <RegionPicker />
+          <a href="https://app.ementor.ai" className="btn-primary" style={{ marginLeft: 4, padding: '9px 20px', fontSize: 14 }}>
             Try the app →
           </a>
         </div>
