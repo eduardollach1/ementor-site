@@ -1,16 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-
-const MARKETS = [
-  { key: 'us', flag: '🇺🇸', label: 'United States', lang: 'en' },
-  { key: 'sv', flag: '🇸🇻', label: 'El Salvador', lang: 'es' },
-  { key: 'ke', flag: '🇰🇪', label: 'Kenya', lang: 'en', soon: true },
-  { key: 'tz', flag: '🇹🇿', label: 'Tanzania', lang: 'en', soon: true },
-];
+import { useMarket, MARKETS } from '../context/MarketContext';
 
 function RegionPicker() {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(MARKETS[0]);
+  const { market, setMarket } = useMarket();
   const ref = useRef(null);
 
   useEffect(() => {
@@ -21,9 +15,8 @@ function RegionPicker() {
 
   function pick(m) {
     if (m.soon) return;
-    setActive(m);
+    setMarket(m);
     setOpen(false);
-    window.open(`https://app.ementor.ai?market=${m.key}&lang=${m.lang}`, '_blank');
   }
 
   return (
@@ -35,8 +28,8 @@ function RegionPicker() {
         fontSize: 13, fontWeight: 500, color: '#3d3d3d',
         transition: 'all 0.15s',
       }}>
-        <span>{active.flag}</span>
-        <span>{active.label}</span>
+        <span>{market.flag}</span>
+        <span>{market.label}</span>
         <span style={{ fontSize: 10, color: '#6b6b6b' }}>▾</span>
       </button>
       {open && (
@@ -51,18 +44,18 @@ function RegionPicker() {
               width: '100%', textAlign: 'left',
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '10px 14px', border: 'none', cursor: m.soon ? 'default' : 'pointer',
-              background: active.key === m.key ? '#e8f5ef' : '#fff',
+              background: market.key === m.key ? '#e8f5ef' : '#fff',
               fontSize: 13, fontWeight: 500,
               color: m.soon ? '#b0b0b0' : '#1a1a1a',
               transition: 'background 0.1s',
             }}
               onMouseEnter={e => { if (!m.soon) e.currentTarget.style.background = '#f7f5f0'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = active.key === m.key ? '#e8f5ef' : '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = market.key === m.key ? '#e8f5ef' : '#fff'; }}
             >
               <span style={{ fontSize: 18 }}>{m.flag}</span>
               <span style={{ flex: 1 }}>{m.label}</span>
               {m.soon && <span style={{ fontSize: 10, color: '#b0b0b0', fontWeight: 600 }}>Soon</span>}
-              {active.key === m.key && !m.soon && <span style={{ fontSize: 11, color: '#1a8a5a' }}>✓</span>}
+              {market.key === m.key && !m.soon && <span style={{ fontSize: 11, color: '#1a8a5a' }}>✓</span>}
             </button>
           ))}
         </div>
@@ -75,6 +68,8 @@ export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const { market, appUrl } = useMarket();
+  const isSV = market.key === 'sv';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -84,12 +79,19 @@ export default function Nav() {
 
   useEffect(() => { setOpen(false); window.scrollTo(0, 0); }, [pathname]);
 
-  const links = [
-    { to: '/', label: 'Home' },
-    { to: '/about', label: 'About' },
-    { to: '/how-it-works', label: 'How it works' },
-    { to: '/contact', label: 'Contact' },
-  ];
+  const links = isSV
+    ? [
+        { to: '/', label: 'Inicio' },
+        { to: '/about', label: 'Nosotros' },
+        { to: '/how-it-works', label: 'Cómo funciona' },
+        { to: '/contact', label: 'Contacto' },
+      ]
+    : [
+        { to: '/', label: 'Home' },
+        { to: '/about', label: 'About' },
+        { to: '/how-it-works', label: 'How it works' },
+        { to: '/contact', label: 'Contact' },
+      ];
 
   return (
     <nav style={{
@@ -117,8 +119,8 @@ export default function Nav() {
             }}>{l.label}</Link>
           ))}
           <RegionPicker />
-          <a href="https://app.ementor.ai" className="btn-primary" style={{ marginLeft: 4, padding: '9px 20px', fontSize: 14 }}>
-            Try the app →
+          <a href={appUrl()} className="btn-primary" style={{ marginLeft: 4, padding: '9px 20px', fontSize: 14 }}>
+            {isSV ? 'Usar la app →' : 'Try the app →'}
           </a>
         </div>
 
@@ -145,8 +147,8 @@ export default function Nav() {
               borderBottom: '1px solid #f0ece6',
             }}>{l.label}</Link>
           ))}
-          <a href="https://app.ementor.ai" className="btn-primary" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
-            Try the app →
+          <a href={appUrl()} className="btn-primary" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
+            {isSV ? 'Usar la app →' : 'Try the app →'}
           </a>
         </div>
       )}
